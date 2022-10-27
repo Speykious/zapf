@@ -1,5 +1,4 @@
 use clap::Parser;
-use log::info;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
