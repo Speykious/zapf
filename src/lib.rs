@@ -124,26 +124,28 @@ pub fn unpack_files(
     let packed_path = packed_path.as_ref();
     let output_path = output_path.as_ref();
 
-    // Skip the first 8 bytes
-    // next 4 bytes are the number of files
+    // get file
     let mut packed_file: File = File::open(&packed_path)?;
-    debug!("file size: {:#?}", packed_file.metadata()?.len());
-    // debug!("{}", packed_file.)
+    debug!("ZAP file size: {:#?}", packed_file.metadata()?.len());
 
+    // read the header to the buf
     let mut buf: [u8; HEAD as usize] = [0; HEAD as usize];
-    // Read the header to the buf
     packed_file.read_exact(&mut buf)?;
-
+    
+    // verify magic number
     let magic_number = &buf[..4];
     assert_eq!(magic_number, MAGIC);
     // panic!("{} is not a zap file.", packed_path.as_ref().display());
 
+    // verify zap file format version
     let zapf_version = u32::from_le_bytes(buf[4..8].try_into().unwrap());
     let expected_zapf_version = VERSION_MAJOR_STR.parse::<u32>().unwrap();
     assert_eq!(zapf_version, expected_zapf_version);
 
+    // get number of files
     let num_files = usize::from_le_bytes(buf[8..16].try_into().unwrap());
 
+    // get zap metadata
     let zap_metas = {
         let mut zap_metas = Vec::new();
         for _ in 0..num_files {
