@@ -183,7 +183,9 @@ pub fn unpack_files(
 
         let file_write = File::create(path)?;
         let mut file_writer = BufWriter::new(&file_write);
-        
+
+        file_reader.seek(io::SeekFrom::Start(meta.content_index))?;
+        let mut file_reader = file_reader.take(meta.size);
         io::copy(&mut file_reader, &mut file_writer)?;
     }
 
