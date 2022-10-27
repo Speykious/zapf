@@ -54,7 +54,6 @@ pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::
     let stripped_paths = {
         let mut stripped_paths = Vec::with_capacity(paths.len());
         for path in &paths {
-            let path = fs::canonicalize(path)?;
             let path = path.strip_prefix(&root_path).unwrap();
             stripped_paths.push(path.to_owned());
         }
