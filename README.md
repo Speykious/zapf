@@ -6,6 +6,8 @@
 
 The project is in its prehistorically early pre-alpha omega sigma stage.
 
+... Ok actually the implementation is already done, but nothing is really documented so I guess it's still a WIP.
+
 ## License
 
 This project is licensed under the LGPL v3.
