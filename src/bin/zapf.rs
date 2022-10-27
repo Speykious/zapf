@@ -1,9 +1,9 @@
 use clap::Parser;
+use std::fs::{self, File};
+use std::io::{self, BufWriter};
+use std::path::PathBuf;
 use walkdir::WalkDir;
 use zapf::pack_files;
-use std::fs::{File, self};
-use std::io::{self, BufWriter};
-use std::path::{PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -17,7 +17,6 @@ fn main() -> io::Result<()> {
 
     let cli = Cli::parse();
     let folder = fs::canonicalize(&cli.folder)?;
-    
 
     println!("Folder: {}", folder.display());
 
@@ -32,7 +31,11 @@ fn main() -> io::Result<()> {
         paths.push(path.to_owned());
     }
 
-    let out_path = cli.output.unwrap_or_default().join(folder.file_name().unwrap());
+    let out_path = cli
+        .output
+        .unwrap_or_default()
+        .join(folder.file_name().unwrap())
+        .with_extension("zap");
     dbg!(&out_path);
     let out_file = File::create(&out_path)?;
     let mut out_writer = BufWriter::new(out_file);
