@@ -197,10 +197,5 @@ pub fn unpack_files(
     }
 
     // high five o/\o HIGH FIIIIVVVEEE!!!!
-
-    // get the content index using the content index
-    // init a readbuf starting at content_index and
-    // read until size
-
     Ok(())
 }
