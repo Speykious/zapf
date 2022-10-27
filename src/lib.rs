@@ -1,8 +1,9 @@
 use log::*;
+use walkdir::WalkDir;
 
 use std::fs::{self, File};
-use std::io::{self, BufReader, BufWriter, Read, Write, Seek};
-use std::path::Path;
+use std::io::{self, BufReader, BufWriter, Read, Seek, Write};
+use std::path::{Path, PathBuf};
 
 // Ideally, it should be given a vector of (fs::Files) and it
 // Reads all the given files and stores their parent agnostic
@@ -22,12 +23,21 @@ struct ZapFileMeta {
     pub content_index: u64,
 }
 
-pub fn pack_files<W: Write>(
-    root_path: impl AsRef<Path>,
-    paths: &[impl AsRef<Path>],
-    writer: &mut W,
-) -> io::Result<()> {
+pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::Result<()> {
     let root_path = root_path.as_ref();
+    let paths: Vec<PathBuf> = {
+        let mut paths = Vec::new();
+        for entry in WalkDir::new(&root_path) {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                continue;
+            }
+
+            paths.push(path.to_owned());
+        }
+        paths
+    };
 
     // magic number
     let mut writer = BufWriter::new(writer);
@@ -43,8 +53,7 @@ pub fn pack_files<W: Write>(
     // get list of paths but stripped from root path
     let stripped_paths = {
         let mut stripped_paths = Vec::with_capacity(paths.len());
-        for path in paths {
-            let path = path.as_ref();
+        for path in &paths {
             let path = fs::canonicalize(path)?;
             let path = path.strip_prefix(&root_path).unwrap();
             stripped_paths.push(path.to_owned());
@@ -67,7 +76,6 @@ pub fn pack_files<W: Write>(
     // write list of file metadata
     info!("Writing list of file metadata");
     for (path, stripped) in paths.iter().zip(&stripped_paths) {
-        let path = path.as_ref();
         let size = File::open(&path)?.metadata()?.len();
         debug!("- {}", stripped.display());
 
@@ -97,7 +105,6 @@ pub fn pack_files<W: Write>(
     // write file contents
     info!("Writing file contents");
     for (path, stripped) in paths.iter().zip(&stripped_paths) {
-        let path = path.as_ref();
         debug!("- {}", stripped.display());
 
         // TODO: Multithread this.
@@ -160,7 +167,7 @@ pub fn unpack_files(
 
         // go to the path index and read it
         file_reader.seek(io::SeekFrom::Start(meta.path_index))?;
-        
+
         // get size of path string
         const SIZELEN: usize = (u16::BITS / 8) as usize;
         let mut path_size_buf: [u8; SIZELEN] = [0; SIZELEN];
