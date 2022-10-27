@@ -1,6 +1,6 @@
 use clap::Parser;
 use walkdir::WalkDir;
-use zapf::combine_files;
+use zapf::pack_files;
 use std::fs::{File, self};
 use std::io::{self, BufWriter};
 use std::path::{PathBuf};
@@ -37,7 +37,7 @@ fn main() -> io::Result<()> {
     let out_file = File::create(&out_path)?;
     let mut out_writer = BufWriter::new(out_file);
 
-    combine_files(&folder, &paths, &mut out_writer)?;
+    pack_files(&folder, &paths, &mut out_writer)?;
 
     Ok(())
 }

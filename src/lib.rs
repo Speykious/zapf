@@ -10,7 +10,7 @@ use std::path::Path;
 // in its header.
 // The writing of said files to the combined file shall be async in nature
 
-pub fn combine_files<W: Write>(
+pub fn pack_files<W: Write>(
     root_path: impl AsRef<Path>,
     paths: &[impl AsRef<Path>],
     writer: &mut W,
