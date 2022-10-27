@@ -13,6 +13,8 @@ struct Cli {
 }
 
 fn main() -> io::Result<()> {
+    env_logger::init();
+
     let cli = Cli::parse();
     let folder = fs::canonicalize(&cli.folder)?;
     
