@@ -27,7 +27,7 @@ pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::
     let root_path = root_path.as_ref();
     let paths: Vec<PathBuf> = {
         let mut paths = Vec::new();
-        for entry in WalkDir::new(&root_path) {
+        for entry in WalkDir::new(root_path) {
             let entry = entry?;
             let path = entry.path();
             if path.is_dir() {
@@ -54,7 +54,7 @@ pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::
     let stripped_paths = {
         let mut stripped_paths = Vec::with_capacity(paths.len());
         for path in &paths {
-            let path = path.strip_prefix(&root_path).unwrap();
+            let path = path.strip_prefix(root_path).unwrap();
             stripped_paths.push(path.to_owned());
         }
         stripped_paths
@@ -65,7 +65,7 @@ pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::
     // get path index and content index from sum of all path lengths
     let mut path_idx = len_header;
     let mut content_idx = {
-        let mut content_idx = len_header as u64;
+        let mut content_idx = len_header;
         for path in &stripped_paths {
             content_idx += (u16::BITS / 8) as u64 + path.as_os_str().len() as u64;
         }
@@ -75,7 +75,7 @@ pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::
     // write list of file metadata
     info!("Writing list of file metadata");
     for (path, stripped) in paths.iter().zip(&stripped_paths) {
-        let size = File::open(&path)?.metadata()?.len();
+        let size = File::open(path)?.metadata()?.len();
         debug!("- {}", stripped.display());
 
         // file metadata
@@ -108,7 +108,7 @@ pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::
 
         // TODO: Multithread this.
         // dump all content of the file into the writer
-        let file = File::open(&path)?;
+        let file = File::open(path)?;
         let mut reader = BufReader::new(file);
         io::copy(&mut reader, &mut writer)?;
     }
@@ -124,13 +124,13 @@ pub fn unpack_files(
     let output_path = output_path.as_ref();
 
     // get file
-    let mut packed_file: File = File::open(&packed_path)?;
+    let mut packed_file: File = File::open(packed_path)?;
     debug!("ZAP file size: {:#?}", packed_file.metadata()?.len());
 
     // read the header to the buf
     let mut buf: [u8; HEAD as usize] = [0; HEAD as usize];
     packed_file.read_exact(&mut buf)?;
-    
+
     // verify magic number
     let magic_number = &buf[..4];
     assert_eq!(magic_number, MAGIC);
@@ -160,7 +160,6 @@ pub fn unpack_files(
         }
         zap_metas
     };
-    dbg!(&zap_metas);
 
     // get the path using the path index
     for meta in &zap_metas {
@@ -179,7 +178,6 @@ pub fn unpack_files(
         file_reader.read_exact(&mut path_vec)?;
 
         let path_string = String::from_utf8(path_vec).unwrap();
-        dbg!(&path_string);
 
         // read from the old/write the contents into a new file
         let path = Path::new(&path_string).to_owned();
