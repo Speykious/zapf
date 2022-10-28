@@ -3,6 +3,7 @@ use walkdir::WalkDir;
 
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Seek, Write};
+use std::os::unix::prelude::OsStrExt;
 use std::path::{Path, PathBuf};
 
 // Ideally, it should be given a vector of (fs::Files) and it
@@ -91,14 +92,14 @@ pub fn pack_files<W: Write>(root_path: impl AsRef<Path>, writer: &mut W) -> io::
     info!("Writing file paths");
     for path in &stripped_paths {
         debug!("- {}", path.display());
+        let path_str = path.as_os_str();
 
         // path length
-        let path_len: u16 = path.as_os_str().len() as u16;
+        let path_len: u16 = path_str.len() as u16;
         writer.write_all(&path_len.to_le_bytes())?;
 
         // path string
-        let path_string = path.display().to_string();
-        writer.write_all(path_string.as_bytes())?;
+        writer.write_all(path_str.as_bytes())?;
     }
 
     // write file contents
